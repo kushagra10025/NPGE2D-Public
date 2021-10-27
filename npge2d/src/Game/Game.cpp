@@ -6,10 +6,12 @@
 
 #include "../Systems/MovementSystem.h"
 #include "../Systems/RenderSystem.h"
+#include "../Systems/AnimationSystem.h"
 
 #include "../Components/TransformComponent.h"
 #include "../Components/RigidBodyComponent.h"
 #include "../Components/SpriteComponent.h"
+#include "../Components/AnimationComponent.h"
 
 
 Game::Game()
@@ -100,14 +102,17 @@ void Game::ProcessInput()
 	}
 }
 
-void Game::Setup() {
+void Game::LoadLevel(int level) {
 	// Add Systems that need to be processed in our game
 	registry->AddSystem<MovementSystem>();
 	registry->AddSystem<RenderSystem>();
+	registry->AddSystem<AnimationSystem>();
 
 	// Adding ass3ets to asset store
-	assetStore->AddTexture(renderer,"tank-image", "./assets/images/tank-panther-right.png");
-	assetStore->AddTexture(renderer,"truck-image", "./assets/images/truck-ford-right.png");
+	assetStore->AddTexture(renderer, "tank-image", "./assets/images/tank-panther-right.png");
+	assetStore->AddTexture(renderer, "truck-image", "./assets/images/truck-ford-right.png");
+	assetStore->AddTexture(renderer, "helicopter-sprite", "./assets/images/chopper.png");
+	assetStore->AddTexture(renderer, "radar-sprite", "./assets/images/radar.png");
 	assetStore->AddTexture(renderer, "tilemap-texture", "./assets/tilemaps/jungle.png");
 
 	// Load the tilemap
@@ -131,26 +136,40 @@ void Game::Setup() {
 			mapFile.ignore();
 			// One entity per tile
 			Entity tile = registry->CreateEntity();
-			tile.AddComponent<TransformComponent>(glm::vec2(x * (tileScale * tileSize),y * (tileScale * tileSize)), glm::vec2(tileScale, tileScale), 0.0);
-			tile.AddComponent<SpriteComponent>("tilemap-texture",tileSize, tileSize,0,srcRectX,srcRectY);
+			tile.AddComponent<TransformComponent>(glm::vec2(x * (tileScale * tileSize), y * (tileScale * tileSize)), glm::vec2(tileScale, tileScale), 0.0);
+			tile.AddComponent<SpriteComponent>("tilemap-texture", tileSize, tileSize, 0, srcRectX, srcRectY);
 		}
 	}
 	mapFile.close();
 
 	// Create Entity
-	Entity tank = registry->CreateEntity();
-	Entity truck = registry->CreateEntity();
-
 	// Add some components to that entity
+
+	Entity tank = registry->CreateEntity();
 	tank.AddComponent<TransformComponent>(glm::vec2(50, 100), glm::vec2(2, 2), 0.0);
-	tank.AddComponent<RigidBodyComponent>(glm::vec2(0, 0));
-	tank.AddComponent<SpriteComponent>("tank-image", 32, 32,1);
+	tank.AddComponent<RigidBodyComponent>(glm::vec2(30, 0));
+	tank.AddComponent<SpriteComponent>("tank-image", 32, 32, 1);
+	
+	Entity truck = registry->CreateEntity();
+	truck.AddComponent<TransformComponent>(glm::vec2(70, 100), glm::vec2(2, 2), 0.0);
+	truck.AddComponent<RigidBodyComponent>(glm::vec2(45, 0));
+	truck.AddComponent<SpriteComponent>("truck-image", 32, 32, 1);
+	
+	Entity helicopter = registry->CreateEntity();
+	helicopter.AddComponent<TransformComponent>(glm::vec2(100, 100), glm::vec2(2, 2), 0.0);
+	helicopter.AddComponent<RigidBodyComponent>(glm::vec2(55, 0));
+	helicopter.AddComponent<SpriteComponent>("helicopter-sprite", 32, 32, 3);
+	helicopter.AddComponent<AnimationComponent>(2, 12, true);
 
-	truck.AddComponent<TransformComponent>(glm::vec2(50, 100), glm::vec2(2, 2), 0.0);
-	truck.AddComponent<RigidBodyComponent>(glm::vec2(0, 0));
-	truck.AddComponent<SpriteComponent>("truck-image", 32, 32,2);
+	Entity radar = registry->CreateEntity();
+	radar.AddComponent<TransformComponent>(glm::vec2(windowWidth - 74, 10), glm::vec2(1, 1), 0.0);
+	radar.AddComponent<SpriteComponent>("radar-sprite", 64, 64, 4);
+	radar.AddComponent<AnimationComponent>(8, 8, true);
+	
+}
 
-	 //AddComponent to Tank - Transform, BoxCollider, SpriteComponent
+void Game::Setup() {
+	LoadLevel(1);
 }
 
 void Game::Update()
@@ -187,6 +206,7 @@ void Game::Render()
 
 	// Invoke all the systems that need to render
 	registry->GetSystem<RenderSystem>().Update(renderer, assetStore);
+	registry->GetSystem<AnimationSystem>().Update();
 	
 	// Back and Front Buffer Swap
 	SDL_RenderPresent(renderer);
