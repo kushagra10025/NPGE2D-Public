@@ -16,6 +16,7 @@ struct SpriteComponent {
 		this->width = width;
 		this->height = height;
 		this->srcRect = { srcRectX, srcRectY, width, height };
+		this->zIndex = zIndex;
 	}
 };
 

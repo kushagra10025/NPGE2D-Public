@@ -10,6 +10,7 @@
 
 #include <SDL.h>
 
+
 class RenderSystem : public System
 {
 private:
@@ -20,13 +21,28 @@ public:
 	}
 
 	void Update(SDL_Renderer* renderer, std::unique_ptr<AssetStore>& assetStore) {
-		// TODO: Sort all entities of our system by z-index
-		
+		// Sort all entities of our system by z-index
+		struct RenderableEntity {
+			TransformComponent transformComponent;
+			SpriteComponent spriteComponent;
+		};
+		std::vector<RenderableEntity> renderableEntities;
+		for (auto entity : GetSystemEntities()) {
+			RenderableEntity rE;
+			rE.spriteComponent = entity.GetComponent<SpriteComponent>();
+			rE.transformComponent = entity.GetComponent<TransformComponent>();
+			renderableEntities.emplace_back(rE);
+		}
+
+		// TODO: Find a better place to sort the entities based on zIndex in the Render System
+		std::sort(renderableEntities.begin(), renderableEntities.end(), [](const RenderableEntity& a, const RenderableEntity& b) {
+			return a.spriteComponent.zIndex < b.spriteComponent.zIndex;
+		});
 
 		// Loop all entities that the system is interested in
-		for (auto entity : GetSystemEntities()) {
-			const auto transform = entity.GetComponent<TransformComponent>();
-			const auto sprite = entity.GetComponent<SpriteComponent>();
+		for (auto entity : renderableEntities) {
+			const auto transform = entity.transformComponent;
+			const auto sprite = entity.spriteComponent;
 
 			// Set Source and Destination Rectangle of sprite
 			SDL_Rect srcRect = sprite.srcRect;
